@@ -1,5 +1,9 @@
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/mberg-kokoro-tts-mcp-badge.png)](https://mseep.ai/app/mberg-kokoro-tts-mcp)
 
+<a href="https://glama.ai/mcp/servers/@mberg/kokoro-tts-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@mberg/kokoro-tts-mcp/badge" alt="Kokoro Text to Speech Server MCP server" />
+</a>
+
 ## Kokoro Text to Speech (TTS) MCP Server
 
 Kokoro Text to Speech MCP server that generates .mp3 files with option to upload to S3.
@@ -136,4 +140,3 @@ The TTS server generates MP3 files that are stored locally and optionally upload
 - Enable/disable S3 uploads with `S3_ENABLED=true` or `DISABLE_S3=true`
 - Configure AWS credentials and bucket settings in the `.env` file
 - S3 uploads can be disabled per-request using the client's `--no-s3` option
-
