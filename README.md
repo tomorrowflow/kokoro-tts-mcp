@@ -1,5 +1,3 @@
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/mberg-kokoro-tts-mcp-badge.png)](https://mseep.ai/app/mberg-kokoro-tts-mcp)
-
 <a href="https://glama.ai/mcp/servers/@mberg/kokoro-tts-mcp">
   <img width="380" height="200" src="https://glama.ai/mcp/servers/@mberg/kokoro-tts-mcp/badge" alt="Kokoro Text to Speech Server MCP server" />
 </a>
