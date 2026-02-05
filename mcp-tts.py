@@ -67,7 +67,7 @@ if not load_claude_desktop_config():
 # Import the fastMCP SDK (make sure it's installed and on your PYTHONPATH)
 from mcp.server.fastmcp import FastMCP
 from starlette.requests import Request
-from starlette.responses import FileResponse, JSONResponse
+from starlette.responses import FileResponse, JSONResponse, Response
 
 # Only attempt to import the KokoroTTSService if it's available
 try:
@@ -550,6 +550,35 @@ def main():
         if not os.path.exists(file_path):
             return JSONResponse({"error": "File not found"}, status_code=404)
         return FileResponse(file_path, media_type="audio/mpeg", filename=filename)
+
+    # REST endpoint: returns MP3 binary directly for OpenClaw TTS provider integration
+    @mcp.custom_route("/api/tts", methods=["POST"])
+    async def api_tts(request: Request):
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
+
+        body["upload_to_s3"] = False
+        result = await mcp_tts_server.process_tts_request(body)
+
+        if not result.get("success"):
+            return JSONResponse({"error": result.get("error", "TTS generation failed")}, status_code=500)
+
+        mp3_path = result.get("path")
+        if not mp3_path or not os.path.exists(mp3_path):
+            return JSONResponse({"error": "Generated file not found"}, status_code=500)
+
+        with open(mp3_path, "rb") as f:
+            audio_bytes = f.read()
+
+        # Clean up the temp file
+        try:
+            os.remove(mp3_path)
+        except Exception:
+            pass
+
+        return Response(content=audio_bytes, media_type="audio/mpeg")
 
     print(f"Starting MCP TTS Server on {args.host}:{args.port} (transport: {args.transport})")
     print(f"MP3 files will be stored in: {MP3_FOLDER}")
