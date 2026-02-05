@@ -1,0 +1,15 @@
+*.onnx
+*.bin
+.env
+.git
+.gitignore
+__pycache__
+.venv
+mp3/
+uv.lock
+mcp_client.py
+start_mcp_server.sh
+*.md
+.dockerignore
+Dockerfile
+docker-compose.yml

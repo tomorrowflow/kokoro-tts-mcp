@@ -1,5 +1,7 @@
 import soundfile as sf
 from kokoro_onnx import Kokoro
+import onnxruntime as rt
+from onnxruntime import InferenceSession
 import re
 import os
 import subprocess
@@ -11,11 +13,38 @@ class KokoroTTSService:
     def __init__(self, model_path="kokoro-v1.0.onnx", voices_path="voices-v1.0.bin"):
         """Initialize the Kokoro TTS service."""
         try:
-            self.kokoro = Kokoro(model_path, voices_path)
+            providers = self._get_providers()
+            sess_options = rt.SessionOptions()
+            sess_options.intra_op_num_threads = os.cpu_count()
+
+            session = InferenceSession(
+                model_path,
+                providers=providers,
+                sess_options=sess_options,
+            )
+
+            active = session.get_providers()
+            print(f"ONNX Runtime active providers: {active}")
+
+            self.kokoro = Kokoro.from_session(session, voices_path)
             self.available = True
         except Exception as e:
             print(f"Error initializing Kokoro TTS: {e}")
             self.available = False
+
+    def _get_providers(self):
+        """Return ONNX execution providers, preferring CUDA if available."""
+        available = rt.get_available_providers()
+        providers = []
+
+        if "CUDAExecutionProvider" in available:
+            providers.append(
+                ("CUDAExecutionProvider", {"cudnn_conv_algo_search": "EXHAUSTIVE"})
+            )
+            print("CUDA execution provider available — enabling GPU acceleration")
+
+        providers.append("CPUExecutionProvider")
+        return providers
             
     def get_voices(self):
         """Return a list of available voices."""

@@ -5,5 +5,5 @@ soundfile==0.12.1
 numpy>=1.26.0
 kokoro_onnx 
 boto3==1.37.18
-fastMCP==0.1.0
-python-dotenv==0.21.0
+mcp[cli]>=1.26
+python-dotenv>=1.0.0

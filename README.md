@@ -60,6 +60,7 @@ To run locally add these to your .env file.  See env.example and copy to .env an
 - `AWS_S3_ENDPOINT_URL`: Optional custom endpoint URL for S3-compatible storage
 - `MCP_HOST`: Host to bind the server to (default: 0.0.0.0)
 - `MCP_PORT`: Port to listen on (default: 9876)
+- `MCP_TRANSPORT`: MCP transport protocol — `streamable-http`, `sse`, or `stdio` (default: streamable-http)
 - `MCP_CLIENT_HOST`: Hostname for client connections to the server (default: localhost)
 - `DEBUG`: Enable debug mode (set to "true" or "1")
 - `S3_ENABLED`: Enable S3 uploads (set to "true" or "1")
@@ -70,11 +71,51 @@ To run locally add these to your .env file.  See env.example and copy to .env an
 - `TTS_SPEED`: Default speed for the TTS client (default: 1.0)
 - `TTS_LANGUAGE`: Default language for the TTS client (default: en-us)
 
+## Docker
+
+### Quick Start
+
+```bash
+docker compose up -d
+```
+
+The MCP endpoint will be available at `http://localhost:3050/mcp`.
+
+### Manual Build & Run
+
+```bash
+docker build -t kokoro-tts-mcp .
+docker run --rm -p 3050:3050 kokoro-tts-mcp
+```
+
+### Transport Options
+
+The server supports three MCP transport protocols:
+
+- `streamable-http` (default) — HTTP-based transport, ideal for Docker and remote access
+- `sse` — Server-Sent Events transport
+- `stdio` — Standard I/O transport, used by Claude Desktop and other MCP clients
+
+Override via environment variable or command line:
+
+```bash
+# Environment variable
+MCP_TRANSPORT=stdio docker compose up
+
+# Command line
+docker run --rm -p 3050:3050 kokoro-tts-mcp python mcp-tts.py --transport sse --host 0.0.0.0 --port 3050
+```
+
 ## Running the Server Locally
 
-Preferred method use UV 
+Preferred method use UV
 ```
 uv run mcp-tts.py
+```
+
+To run with stdio transport (for Claude Desktop):
+```
+uv run mcp-tts.py --transport stdio
 ```
 
 

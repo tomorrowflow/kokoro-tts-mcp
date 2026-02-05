@@ -432,6 +432,10 @@ def main():
                         help="Override S3 region")
     parser.add_argument("--claude-desktop-config", type=str,
                         help="Path to claude_desktop_config.json if not in default location")
+    parser.add_argument("--transport",
+                        default=os.environ.get('MCP_TRANSPORT', 'streamable-http'),
+                        choices=['stdio', 'sse', 'streamable-http'],
+                        help="MCP transport protocol (default: streamable-http)")
     
     args = parser.parse_args()
     
@@ -489,7 +493,7 @@ def main():
     mcp_tts_server = MCPTTSServer(host=args.host, port=args.port)
     
     # Create and configure the FastMCP server
-    mcp = FastMCP("Kokoro TTS Server")
+    mcp = FastMCP("Kokoro TTS Server", host=args.host, port=args.port)
     
     # Register our TTS tool using the decorator syntax
     @mcp.tool()
@@ -523,12 +527,12 @@ def main():
         
         return await mcp_tts_server.process_tts_request(request_data)
     
-    print(f"Starting MCP TTS Server on {args.host}:{args.port}")
+    print(f"Starting MCP TTS Server on {args.host}:{args.port} (transport: {args.transport})")
     print(f"MP3 files will be stored in: {MP3_FOLDER}")
     
     try:
         # Run the server
-        mcp.run()
+        mcp.run(transport=args.transport)
     except KeyboardInterrupt:
         print("Server stopped by user")
     except Exception as e:

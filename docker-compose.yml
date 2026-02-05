@@ -1,0 +1,36 @@
+services:
+  kokoro-tts:
+    build: .
+    container_name: kokoro-tts-mcp
+    ports:
+      - "${MCP_PORT:-3050}:3050"
+    environment:
+      - MCP_TRANSPORT=${MCP_TRANSPORT:-streamable-http}
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3050
+      - TTS_VOICE=${TTS_VOICE:-af_heart}
+      - TTS_SPEED=${TTS_SPEED:-1.0}
+      - TTS_LANGUAGE=${TTS_LANGUAGE:-en-us}
+      - S3_ENABLED=${S3_ENABLED:-false}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME:-}
+      - AWS_S3_REGION=${AWS_S3_REGION:-us-east-1}
+      - AWS_S3_FOLDER=${AWS_S3_FOLDER:-mp3}
+      - AWS_S3_ENDPOINT_URL=${AWS_S3_ENDPOINT_URL:-}
+      - MP3_RETENTION_DAYS=${MP3_RETENTION_DAYS:-}
+      - DELETE_LOCAL_AFTER_S3_UPLOAD=${DELETE_LOCAL_AFTER_S3_UPLOAD:-false}
+      - DEBUG=${DEBUG:-false}
+    volumes:
+      - mp3_data:/app/mp3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  mp3_data:
