@@ -66,6 +66,8 @@ if not load_claude_desktop_config():
 
 # Import the fastMCP SDK (make sure it's installed and on your PYTHONPATH)
 from mcp.server.fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import FileResponse, JSONResponse
 
 # Only attempt to import the KokoroTTSService if it's available
 try:
@@ -97,12 +99,19 @@ class MCPTTSServer:
         "filename": "output.mp3",      # Optional; a UUID will be generated if not provided
         "upload_to_s3": true           # Optional; defaults to true if S3 is enabled
     }
-    
+
     The response will include file details and (if enabled) an S3 URL.
     """
-    def __init__(self, host='0.0.0.0', port=9876):
+    def __init__(self, host='0.0.0.0', port=9876, base_url=None):
         self.host = host
         self.port = port
+
+        # Compute base URL for download links
+        if base_url:
+            self.base_url = base_url.rstrip('/')
+        else:
+            effective_host = 'localhost' if host == '0.0.0.0' else host
+            self.base_url = f"http://{effective_host}:{port}"
         
         # Validate S3 settings at startup
         self.s3_enabled = False
@@ -376,6 +385,7 @@ class MCPTTSServer:
                 "filename": mp3_filename,
                 "file_size": file_size,
                 "path": mp3_path,
+                "url": f"{self.base_url}/mp3/{mp3_filename}",
                 "s3_uploaded": False
             }
             
@@ -392,6 +402,7 @@ class MCPTTSServer:
                             print(f"Removing local file {mp3_path} after successful S3 upload")
                             os.remove(mp3_path)
                             response_data["local_file_kept"] = False
+                            response_data.pop("url", None)
                         except Exception as e:
                             print(f"Error removing local file after S3 upload: {e}")
                             response_data["local_file_kept"] = True
@@ -489,9 +500,12 @@ def main():
             else:
                 print(f"  {var}: Not set")
     
+    # Compute base URL for MP3 download links
+    base_url = os.environ.get('BASE_URL')
+
     # Instantiate our TTS server (which handles S3 validation and TTS generation)
-    mcp_tts_server = MCPTTSServer(host=args.host, port=args.port)
-    
+    mcp_tts_server = MCPTTSServer(host=args.host, port=args.port, base_url=base_url)
+
     # Create and configure the FastMCP server
     mcp = FastMCP("Kokoro TTS Server", host=args.host, port=args.port)
     
@@ -526,9 +540,20 @@ def main():
         }
         
         return await mcp_tts_server.process_tts_request(request_data)
-    
+
+    # Register HTTP endpoint for MP3 file downloads
+    @mcp.custom_route("/mp3/{filename}", methods=["GET"])
+    async def download_mp3(request: Request):
+        filename = request.path_params['filename']
+        filename = secure_filename(filename)
+        file_path = os.path.join(MP3_FOLDER, filename)
+        if not os.path.exists(file_path):
+            return JSONResponse({"error": "File not found"}, status_code=404)
+        return FileResponse(file_path, media_type="audio/mpeg", filename=filename)
+
     print(f"Starting MCP TTS Server on {args.host}:{args.port} (transport: {args.transport})")
     print(f"MP3 files will be stored in: {MP3_FOLDER}")
+    print(f"MP3 download base URL: {mcp_tts_server.base_url}")
     
     try:
         # Run the server
